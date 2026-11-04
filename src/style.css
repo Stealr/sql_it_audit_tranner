@@ -73,5 +73,21 @@ details li { margin: 4px 0; overflow-wrap: anywhere; }
 .task-number, .task-card small { color: #666; font-size: 12px; }
 .completed-mark { color: #396b40; font-size: 12px; font-weight: 700; }
 .card-arrow { margin-top: auto; font-size: 12px; font-weight: 600; }
-@media (max-width: 1050px) { .workspace { grid-template-columns: minmax(220px, 280px) 1fr; } .tables-panel { grid-column: 2; position: static; height: auto; max-height: 500px; } }
-@media (max-width: 700px) { .topbar { gap: 20px; } .topbar-note { display: none; } .workspace { display: flex; flex-direction: column; padding: 14px; gap: 14px; } .task-panel, .tables-panel { position: static; height: auto; max-height: none; } .task-panel { min-height: 300px; } .catalog { padding: 30px 14px; } .task-grid { grid-template-columns: 1fr; } }
+.workspace-jumps { display: none; }
+@media (max-width: 1100px) {
+  .workspace { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); }
+  .task-panel { grid-row: 1 / span 2; align-self: start; }
+  .tables-panel { grid-column: 2; position: static; height: auto; max-height: 500px; }
+}
+@media (max-width: 700px) {
+  .topbar { gap: 20px; }
+  .topbar-note { display: none; }
+  .workspace { display: flex; flex-direction: column; padding: 0 14px 14px; gap: 14px; }
+  .workspace-jumps { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; background: #f4f4f4; padding: 8px 0; }
+  .workspace-jumps button { flex: 1; border: 1px solid #bdbdbd; border-radius: 4px; padding: 8px 4px; background: #fff; color: inherit; }
+  .workspace > .panel { scroll-margin-top: 60px; }
+  .task-panel, .tables-panel { position: static; height: auto; min-height: 0; max-height: none; }
+  .task-panel { align-self: stretch; }
+  .catalog { padding: 30px 14px; }
+  .task-grid { grid-template-columns: 1fr; }
+}

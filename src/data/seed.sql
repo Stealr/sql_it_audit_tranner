@@ -45,3 +45,17 @@ INSERT INTO account_roles VALUES
   (3, 1),
   (4, 3),
   (5, 1);
+
+INSERT INTO journal_entries VALUES
+  (1, '2026-04-01', 99999, 1),
+  (2, '2026-04-02', 180000, 5),
+  (3, '2026-04-03', 240000, 4),
+  (4, '2026-04-04', 100000, 2),
+  (5, '2026-04-05', 125000, 7),
+  (6, '2026-04-06', 180000, 8);
+INSERT INTO approvals VALUES
+  (1, 2, 'rejected', 4),
+  (2, 2, 'rejected', 1),
+  (3, 3, 'rejected', 1),
+  (4, 3, 'approved', 2),
+  (5, 5, 'approved', 4);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql as sqlLanguage, SQLite } from '@codemirror/lang-sql'
-import { tableColumns, tasks } from './data/tasks'
+import { tableColumns, tasks } from './data/tasks.js'
 
 const sqlExtensions = [sqlLanguage({ dialect: SQLite })]
 const plannedTaskCount = 12
@@ -82,6 +82,10 @@ function App() {
 
   function changeQuery(value: string) {
     if (value === query) return
+    worker.current?.terminate()
+    worker.current = null
+    if (timeout.current) clearTimeout(timeout.current)
+    setRunning(false)
     setQuery(value)
     setResult(null)
     setAssessment(null)
@@ -188,7 +192,16 @@ function App() {
 
       {task ? (
         <main className="workspace">
-          <aside key={`task:${task.id}`} className="panel task-panel" aria-label="Условие задания">
+          <nav className="workspace-jumps" aria-label="Разделы задания">
+            {([['task-panel', 'Условие'], ['editor-panel', 'SQL'], ['tables-panel', 'Таблицы']] as const).map(([id, label]) => (
+              <button key={id} onClick={() => {
+                const panel = document.getElementById(id)
+                panel?.focus({ preventScroll: true })
+                panel?.scrollIntoView({ block: 'start' })
+              }}>{label}</button>
+            ))}
+          </nav>
+          <aside id="task-panel" tabIndex={-1} key={`task:${task.id}`} className="panel task-panel" aria-label="Условие задания">
             <span className="eyebrow">ЗАДАНИЕ {task.id} / {plannedTaskCount}</span>
             <h1>{task.title}</h1>
             <p>{task.description}</p>
@@ -210,7 +223,7 @@ function App() {
             </div>
           </aside>
 
-          <section className="panel editor-panel" aria-label="Редактор SQL">
+          <section id="editor-panel" tabIndex={-1} className="panel editor-panel" aria-label="Редактор SQL">
             <div className="panel-heading"><h2>SQL-редактор</h2><span>SQLite · учебная база</span></div>
             <CodeMirror key={task.id} value={query} height="290px" extensions={sqlExtensions} onChange={changeQuery} />
             <p className="editor-note">Каждый запуск использует исходные данные. Изменения в запросе сохраняются для этого задания.</p>
@@ -242,7 +255,7 @@ function App() {
             </section>
           </section>
 
-          <aside key={`tables:${task.id}`} className="panel tables-panel" aria-label="Доступные таблицы">
+          <aside id="tables-panel" tabIndex={-1} key={`tables:${task.id}`} className="panel tables-panel" aria-label="Доступные таблицы">
             <h2>Доступные таблицы</h2>
             <p className="muted">Основные для этого задания: {task.availableTables.join(', ')}.</p>
             <div className="tables-list">{Object.entries(tableColumns).map(([name, columns]) => (
@@ -275,7 +288,6 @@ function App() {
               <span className="card-arrow">Открыть →</span>
             </button>
           ))}</div>
-          <p className="muted">Следующие задания будут добавлены в последующих итерациях.</p>
         </main>
       )}
     </div>

@@ -1,18 +1,12 @@
-export type Task = {
-  id: number
-  title: string
-  skill: string
-  description: string
-  availableTables: string[]
-  starterSql: string
-  hint: string
-  expectedColumns: string[]
-  sortRule: string
-  orderMatters: boolean
-  referenceSql: string
-}
+// @ts-check
+/** @typedef {{
+ * id: number, title: string, skill: string, description: string,
+ * availableTables: string[], starterSql: string, hint: string,
+ * expectedColumns: string[], sortRule: string, orderMatters: boolean, referenceSql: string
+ * }} Task */
 
-export const tasks: Task[] = [
+/** @type {Task[]} */
+export const tasks = [
   {
     id: 1,
     title: 'Активные учётные записи',
@@ -143,9 +137,36 @@ export const tasks: Task[] = [
     orderMatters: true,
     referenceSql: 'SELECT e.full_name, COUNT(a.id) FROM employees e JOIN accounts a ON a.employee_id = e.id WHERE a.is_active = 1 GROUP BY e.id, e.full_name HAVING COUNT(a.id) >= 2 ORDER BY COUNT(a.id) DESC, e.full_name',
   },
+  {
+    id: 11,
+    title: 'Проводки без одобрения',
+    skill: 'NOT EXISTS · LEFT JOIN',
+    description: 'Найдите проводки без единого решения approved. Включите проводки без решений и проводки, по которым есть только отказы.',
+    availableTables: ['journal_entries', 'approvals'],
+    starterSql: 'SELECT id, entry_date, amount\nFROM journal_entries;',
+    hint: 'Наличие хотя бы одного approved исключает проводку, даже если есть и rejected.',
+    expectedColumns: ['id', 'entry_date', 'amount'],
+    sortRule: 'По id по возрастанию.',
+    orderMatters: true,
+    referenceSql: "SELECT j.id, j.entry_date, j.amount FROM journal_entries j WHERE NOT EXISTS (SELECT 1 FROM approvals p WHERE p.entry_id = j.id AND p.decision = 'approved') ORDER BY j.id",
+  },
+  {
+    id: 12,
+    title: 'Крупные проводки без одобрения',
+    skill: 'JOIN · NOT EXISTS',
+    description: 'Найдите проводки на сумму от 100 000 рублей включительно без единого решения approved. Выведите логин учётной записи, создавшей проводку.',
+    availableTables: ['journal_entries', 'approvals', 'accounts'],
+    starterSql: 'SELECT j.id, a.login, j.amount\nFROM journal_entries j\nJOIN accounts a ON a.id = j.created_by_account_id;',
+    hint: 'Используйте критерий из задания 11 и связь created_by_account_id.',
+    expectedColumns: ['id', 'login', 'amount'],
+    sortRule: 'По сумме по убыванию, затем по id по возрастанию.',
+    orderMatters: true,
+    referenceSql: "SELECT j.id, a.login, j.amount FROM journal_entries j JOIN accounts a ON a.id = j.created_by_account_id WHERE j.amount >= 100000 AND NOT EXISTS (SELECT 1 FROM approvals p WHERE p.entry_id = j.id AND p.decision = 'approved') ORDER BY j.amount DESC, j.id",
+  },
 ]
 
-export const tableColumns: Record<string, string[]> = {
+/** @type {Record<string, string[]>} */
+export const tableColumns = {
   employees: ['id INTEGER', 'full_name TEXT', 'status TEXT'],
   systems: ['id INTEGER', 'name TEXT'],
   accounts: ['id INTEGER', 'employee_id INTEGER', 'system_id INTEGER', 'login TEXT', 'is_active INTEGER'],
