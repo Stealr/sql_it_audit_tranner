@@ -8,6 +8,8 @@ export type Task = {
   hint: string
   expectedColumns: string[]
   sortRule: string
+  orderMatters: boolean
+  referenceSql: string
 }
 
 export const tasks: Task[] = [
@@ -21,6 +23,8 @@ export const tasks: Task[] = [
     hint: 'Признак активности находится в accounts.is_active.',
     expectedColumns: ['id', 'login'],
     sortRule: 'По id по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT id, login FROM accounts WHERE is_active = 1 ORDER BY id',
   },
   {
     id: 2,
@@ -32,6 +36,8 @@ export const tasks: Task[] = [
     hint: "Сравните status со значением 'terminated'.",
     expectedColumns: ['id', 'full_name'],
     sortRule: 'По full_name, затем по id, оба по возрастанию.',
+    orderMatters: true,
+    referenceSql: "SELECT id, full_name FROM employees WHERE status = 'terminated' ORDER BY full_name, id",
   },
   {
     id: 3,
@@ -43,6 +49,8 @@ export const tasks: Task[] = [
     hint: 'Отсутствие владельца проверяется через IS NULL.',
     expectedColumns: ['id', 'asset_tag'],
     sortRule: 'По id по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT id, asset_tag FROM assets WHERE owner_employee_id IS NULL ORDER BY id',
   },
   {
     id: 4,
@@ -54,6 +62,8 @@ export const tasks: Task[] = [
     hint: 'При соединении сохраните все строки из accounts.',
     expectedColumns: ['id', 'login'],
     sortRule: 'По id по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT a.id, a.login FROM accounts a LEFT JOIN employees e ON e.id = a.employee_id WHERE e.id IS NULL ORDER BY a.id',
   },
   {
     id: 5,
@@ -65,6 +75,8 @@ export const tasks: Task[] = [
     hint: 'Одновременно проверьте статус сотрудника и активность записи.',
     expectedColumns: ['full_name', 'login'],
     sortRule: 'По имени сотрудника, затем по логину, по возрастанию.',
+    orderMatters: true,
+    referenceSql: "SELECT e.full_name, a.login FROM employees e JOIN accounts a ON a.employee_id = e.id WHERE e.status = 'terminated' AND a.is_active = 1 ORDER BY e.full_name, a.login",
   },
   {
     id: 6,
@@ -76,6 +88,34 @@ export const tasks: Task[] = [
     hint: 'Соедините актив с назначенным владельцем и проверьте его статус.',
     expectedColumns: ['asset_tag', 'full_name'],
     sortRule: 'По asset_tag по возрастанию.',
+    orderMatters: true,
+    referenceSql: "SELECT a.asset_tag, e.full_name FROM assets a JOIN employees e ON e.id = a.owner_employee_id WHERE e.status = 'terminated' ORDER BY a.asset_tag",
+  },
+  {
+    id: 7,
+    title: 'Привилегированные роли',
+    skill: 'JOIN трёх таблиц',
+    description: 'Выведите каждое назначение привилегированной роли активной учётной записи отдельной строкой.',
+    availableTables: ['accounts', 'account_roles', 'roles'],
+    starterSql: 'SELECT a.login, r.name\nFROM accounts a\nJOIN account_roles ar ON ar.account_id = a.id\nJOIN roles r ON r.id = ar.role_id;',
+    hint: 'Таблица account_roles связывает учётные записи и роли.',
+    expectedColumns: ['login', 'name'],
+    sortRule: 'По логину, затем по названию роли, по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT a.login, r.name FROM accounts a JOIN account_roles ar ON ar.account_id = a.id JOIN roles r ON r.id = ar.role_id WHERE a.is_active = 1 AND r.is_privileged = 1 ORDER BY a.login, r.name',
+  },
+  {
+    id: 8,
+    title: 'Активные учётные записи по системам',
+    skill: 'LEFT JOIN · GROUP BY',
+    description: 'Для каждой системы, включая системы без активных записей, посчитайте число активных учётных записей.',
+    availableTables: ['systems', 'accounts'],
+    starterSql: 'SELECT s.name, COUNT(a.id)\nFROM systems s\nLEFT JOIN accounts a ON a.system_id = s.id\nGROUP BY s.id, s.name;',
+    hint: 'Условие активности в WHERE может исключить систему с нулём записей.',
+    expectedColumns: ['name', 'count'],
+    sortRule: 'По имени системы по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT s.name, COUNT(a.id) FROM systems s LEFT JOIN accounts a ON a.system_id = s.id AND a.is_active = 1 GROUP BY s.id, s.name ORDER BY s.name',
   },
 ]
 

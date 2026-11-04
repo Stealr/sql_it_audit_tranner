@@ -13,7 +13,7 @@ INSERT INTO employees VALUES
   (3, 'Мария Ким', 'terminated'),
   (4, 'Олег Соколов', 'active');
 INSERT INTO systems VALUES
-  (1, 'ERP'), (2, 'Кадровая система');
+  (1, 'ERP'), (2, 'Кадровая система'), (3, 'Архив');
 INSERT INTO accounts VALUES
   (1, 1, 1, 'asmirnova', 1),
   (2, 2, 1, 'ipetrov', 1),
@@ -28,3 +28,14 @@ INSERT INTO assets VALUES
   (4, 'MON-004', NULL, 2),
   (5, 'LAP-005', 2, 1),
   (6, 'KEY-006', 3, 2);
+
+INSERT INTO roles VALUES
+  (1, 'Администратор', 1),
+  (2, 'Читатель', 0),
+  (3, 'Аудитор', 1);
+INSERT INTO account_roles VALUES
+  (1, 2),
+  (2, 1),
+  (3, 1),
+  (4, 3),
+  (5, 1);

@@ -74,6 +74,23 @@ test('просмотр таблицы ограничивает выдачу и �
   db.close()
 })
 
+test('данные для ролей и систем покрывают задания 7–8', () => {
+  const db = database()
+  assert.deepEqual(rows(db, `SELECT a.login, r.name FROM accounts a
+    JOIN account_roles ar ON ar.account_id = a.id
+    JOIN roles r ON r.id = ar.role_id
+    WHERE a.is_active = 1 AND r.is_privileged = 1
+    ORDER BY a.login, r.name`), [
+    ['ipetrov', 'Администратор'], ['osokolov', 'Аудитор'], ['svc_erp', 'Администратор'],
+  ])
+  assert.deepEqual(rows(db, `SELECT s.name, COUNT(a.id) FROM systems s
+    LEFT JOIN accounts a ON a.system_id = s.id AND a.is_active = 1
+    GROUP BY s.id, s.name ORDER BY s.name`), [
+    ['ERP', 3], ['Архив', 0], ['Кадровая система', 1],
+  ])
+  db.close()
+})
+
 test('новая база восстанавливает исходные данные', () => {
   const first = database()
   first.run('DELETE FROM accounts')

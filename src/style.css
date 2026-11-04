@@ -20,6 +20,9 @@ p { line-height: 1.5; }
 .field-list { list-style: none; padding: 0; margin: 0; font-size: 14px; }
 .field-list li { margin: 5px 0; }
 .task-skill { color: #666; font-size: 12px !important; }
+.hint-block { margin: 20px 0; }
+.hint-block button { width: 100%; }
+.hint-block p { font-size: 13px; }
 .task-navigation { margin-top: auto; display: grid; gap: 10px; }
 .navigation-row { display: flex; gap: 8px; }
 .navigation-row button { flex: 1; }
@@ -38,6 +41,9 @@ th { background: #ececec; }
 th, td { border: 1px solid #c7c7c7; padding: 10px; }
 .empty-result { margin: 12px; }
 .error { padding: 14px; border: 1px solid #bdbdbd; background: #f0f0f0; white-space: pre-wrap; }
+.feedback { border: 1px solid #aaa; border-radius: 4px; padding: 12px; font-size: 13px; }
+.feedback.correct { background: #e8f2e9; border-color: #8aa98e; }
+.feedback.incorrect { background: #f7ece8; border-color: #ba9a8e; }
 .tables-panel h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
 .tables-panel > p { margin-bottom: 20px; }
 .tables-list { max-height: 230px; overflow-y: auto; padding-right: 4px; }

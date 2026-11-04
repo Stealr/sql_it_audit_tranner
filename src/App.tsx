@@ -5,7 +5,7 @@ import { tableColumns, tasks } from './data/tasks'
 
 const sqlExtensions = [sqlLanguage({ dialect: SQLite })]
 const plannedTaskCount = 12
-type QueryResult = { id: number; columns: string[]; rows: (string | number | null)[][]; error?: string }
+type QueryResult = { id: number; columns: string[]; rows: (string | number | null)[][]; error?: string; correct?: boolean }
 
 function routeTaskId(): number | null {
   const match = window.location.hash.match(/^#task\/(\d+)$/)
@@ -22,6 +22,8 @@ function App() {
   const [query, setQuery] = useState(() => taskId === null ? '' : savedQuery(taskId))
   const [result, setResult] = useState<QueryResult | null>(null)
   const [running, setRunning] = useState(false)
+  const [assessment, setAssessment] = useState<'correct' | 'incorrect' | null>(null)
+  const [showHint, setShowHint] = useState(false)
   const [previewTable, setPreviewTable] = useState<string | null>(null)
   const [preview, setPreview] = useState<QueryResult | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -48,6 +50,8 @@ function App() {
     requestId.current++
     setRunning(false)
     setResult(null)
+    setAssessment(null)
+    setShowHint(false)
     setPreviewLoading(false)
     setPreview(null)
     setPreviewTable(null)
@@ -70,10 +74,11 @@ function App() {
     if (value === query) return
     setQuery(value)
     setResult(null)
+    setAssessment(null)
     if (taskId !== null) localStorage.setItem(`sql-trainer:query:${taskId}`, value)
   }
 
-  function runQuery() {
+  function runQuery(check: boolean) {
     if (!task || !query.trim()) return
     if (timeout.current) clearTimeout(timeout.current)
     worker.current?.terminate()
@@ -82,10 +87,12 @@ function App() {
     const id = ++requestId.current
     setRunning(true)
     setResult(null)
+    setAssessment(null)
     nextWorker.onmessage = (event: MessageEvent<QueryResult>) => {
       if (event.data.id !== id || worker.current !== nextWorker) return
       if (timeout.current) clearTimeout(timeout.current)
       setResult(event.data)
+      if (check && !event.data.error) setAssessment(event.data.correct ? 'correct' : 'incorrect')
       setRunning(false)
       nextWorker.terminate()
       worker.current = null
@@ -98,7 +105,7 @@ function App() {
       nextWorker.terminate()
       worker.current = null
     }
-    nextWorker.postMessage({ id, sql: query })
+    nextWorker.postMessage({ id, sql: query, referenceSql: check ? task.referenceSql : undefined, orderMatters: task.orderMatters })
     timeout.current = setTimeout(() => {
       if (worker.current !== nextWorker) return
       nextWorker.terminate()
@@ -172,6 +179,10 @@ function App() {
             <h2>Сортировка</h2>
             <p>{task.sortRule}</p>
             <p className="task-skill">{task.skill}</p>
+            <div className="hint-block">
+              <button className="secondary" onClick={() => setShowHint((visible) => !visible)}>{showHint ? 'Скрыть подсказку' : 'Показать подсказку'}</button>
+              {showHint && <p>{task.hint}</p>}
+            </div>
             <div className="task-navigation">
               <button className="secondary" onClick={() => openTask(null)}>Все задания</button>
               <div className="navigation-row">
@@ -186,11 +197,14 @@ function App() {
             <CodeMirror key={task.id} value={query} height="290px" extensions={sqlExtensions} onChange={changeQuery} />
             <p className="editor-note">Каждый запуск использует исходные данные. Изменения в запросе сохраняются для этого задания.</p>
             <div className="actions">
-              <button onClick={runQuery} disabled={running || !query.trim()}>{running ? 'Выполняется…' : '▶ Выполнить'}</button>
+              <button onClick={() => runQuery(false)} disabled={running || !query.trim()}>{running ? 'Выполняется…' : '▶ Выполнить'}</button>
+              <button className="secondary" onClick={() => runQuery(true)} disabled={running || !query.trim()}>✓ Проверить</button>
               <button className="secondary" onClick={() => changeQuery(task.starterSql)}>Сбросить запрос</button>
             </div>
             <section className="result" aria-live="polite">
               <h2>Результат запроса</h2>
+              {assessment === 'correct' && <p className="feedback correct" role="status">Верно! Результат совпал с ожидаемым.</p>}
+              {assessment === 'incorrect' && <p className="feedback incorrect" role="status">Результат не совпал. Проверьте строки, повторы и сортировку; при необходимости откройте подсказку.</p>}
               {!result && <p className="muted">Запустите запрос, чтобы увидеть строки.</p>}
               {result?.error && <p role="alert" className="error">{result.error}</p>}
               {result && !result.error && result.columns.length === 0 && <p>Запрос не вернул таблицу.</p>}
