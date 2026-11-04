@@ -1,32 +1,67 @@
 import { useEffect, useRef, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql as sqlLanguage, SQLite } from '@codemirror/lang-sql'
+import { tableColumns, tasks } from './data/tasks'
 
-const starterQuery = `SELECT e.full_name, a.login
-FROM employees e
-JOIN accounts a ON a.employee_id = e.id
-WHERE e.status = 'terminated' AND a.is_active = 1;`
-
+const sqlExtensions = [sqlLanguage({ dialect: SQLite })]
+const plannedTaskCount = 12
 type QueryResult = { id: number; columns: string[]; rows: (string | number | null)[][]; error?: string }
 
+function routeTaskId(): number | null {
+  const match = window.location.hash.match(/^#task\/(\d+)$/)
+  const id = match ? Number(match[1]) : null
+  return tasks.some((task) => task.id === id) ? id : null
+}
+
+function savedQuery(id: number): string {
+  return localStorage.getItem(`sql-trainer:query:${id}`) ?? tasks.find((task) => task.id === id)!.starterSql
+}
+
 function App() {
-  const [query, setQuery] = useState(() => localStorage.getItem('sql-trainer:query') ?? starterQuery)
+  const [taskId, setTaskId] = useState<number | null>(routeTaskId)
+  const [query, setQuery] = useState(() => taskId === null ? '' : savedQuery(taskId))
   const [result, setResult] = useState<QueryResult | null>(null)
   const [running, setRunning] = useState(false)
   const worker = useRef<Worker | null>(null)
   const requestId = useRef(0)
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const task = tasks.find((item) => item.id === taskId)
 
   useEffect(() => {
-    localStorage.setItem('sql-trainer:query', query)
-  }, [query])
+    const onHashChange = () => setTaskId(routeTaskId())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  useEffect(() => {
+    worker.current?.terminate()
+    worker.current = null
+    if (timeout.current) clearTimeout(timeout.current)
+    requestId.current++
+    setRunning(false)
+    setResult(null)
+    setQuery(taskId === null ? '' : savedQuery(taskId))
+  }, [taskId])
 
   useEffect(() => () => {
     worker.current?.terminate()
     if (timeout.current) clearTimeout(timeout.current)
   }, [])
 
+  function openTask(id: number | null) {
+    window.location.hash = id === null ? 'tasks' : `task/${id}`
+    setTaskId(id)
+  }
+
+  function changeQuery(value: string) {
+    if (value === query) return
+    setQuery(value)
+    setResult(null)
+    if (taskId !== null) localStorage.setItem(`sql-trainer:query:${taskId}`, value)
+  }
+
   function runQuery() {
+    if (!task || !query.trim()) return
     if (timeout.current) clearTimeout(timeout.current)
     worker.current?.terminate()
     const nextWorker = new Worker(new URL('./sql.worker.ts', import.meta.url), { type: 'module' })
@@ -59,34 +94,80 @@ function App() {
   }
 
   return (
-    <main className="app">
-      <header>
-        <span className="eyebrow">SQL-тренажёр · ИТ-аудит</span>
-        <h1>Активные учётные записи уволенных сотрудников</h1>
-        <p>Найдите имя сотрудника и логин для каждой активной учётной записи, связанной с уволенным сотрудником.</p>
+    <div className="app">
+      <header className="topbar">
+        <button className="brand" onClick={() => openTask(null)}>SQL / АУДИТ</button>
+        <span>{task ? `Задание ${task.id} / ${plannedTaskCount}` : 'Все задания'}</span>
+        <span className="topbar-note">Учебная база · SQLite</span>
       </header>
 
-      <section className="schema" aria-label="Доступные таблицы">
-        <div><strong>employees</strong><code>id · full_name · status</code></div>
-        <div><strong>accounts</strong><code>id · employee_id · login · is_active</code></div>
-        <p><code>status = 'terminated'</code> означает увольнение; <code>is_active = 1</code> означает активную учётную запись.</p>
-      </section>
+      {task ? (
+        <main className="workspace">
+          <aside className="panel task-panel" aria-label="Условие задания">
+            <span className="eyebrow">ЗАДАНИЕ {task.id} / {plannedTaskCount}</span>
+            <h1>{task.title}</h1>
+            <p>{task.description}</p>
+            <h2>Поля результата</h2>
+            <ul className="field-list">{task.expectedColumns.map((column) => <li key={column}><code>{column}</code></li>)}</ul>
+            <h2>Сортировка</h2>
+            <p>{task.sortRule}</p>
+            <p className="task-skill">{task.skill}</p>
+            <div className="task-navigation">
+              <button className="secondary" onClick={() => openTask(null)}>Все задания</button>
+              <div className="navigation-row">
+                <button className="secondary" disabled={task.id === 1} onClick={() => openTask(task.id - 1)}>← Назад</button>
+                <button className="secondary" disabled={task.id === tasks.length} onClick={() => openTask(task.id + 1)}>Далее →</button>
+              </div>
+            </div>
+          </aside>
 
-      <section aria-label="Редактор SQL">
-        <CodeMirror value={query} height="220px" extensions={[sqlLanguage({ dialect: SQLite })]} onChange={setQuery} />
-        <button onClick={runQuery} disabled={running}>{running ? 'Выполняется…' : 'Выполнить запрос'}</button>
-      </section>
+          <section className="panel editor-panel" aria-label="Редактор SQL">
+            <div className="panel-heading"><h2>SQL-редактор</h2><span>SQLite · учебная база</span></div>
+            <CodeMirror key={task.id} value={query} height="290px" extensions={sqlExtensions} onChange={changeQuery} />
+            <p className="editor-note">Каждый запуск использует исходные данные. Изменения в запросе сохраняются для этого задания.</p>
+            <div className="actions">
+              <button onClick={runQuery} disabled={running || !query.trim()}>{running ? 'Выполняется…' : '▶ Выполнить'}</button>
+              <button className="secondary" onClick={() => changeQuery(task.starterSql)}>Сбросить запрос</button>
+            </div>
+            <section className="result" aria-live="polite">
+              <h2>Результат запроса</h2>
+              {!result && <p className="muted">Запустите запрос, чтобы увидеть строки.</p>}
+              {result?.error && <p role="alert" className="error">{result.error}</p>}
+              {result && !result.error && result.columns.length === 0 && <p>Запрос не вернул таблицу.</p>}
+              {result && !result.error && result.columns.length > 0 && (
+                <div className="table-wrap"><table><thead><tr>{result.columns.map((column, index) => <th key={index}>{column}</th>)}</tr></thead>
+                  <tbody>{result.rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value === null ? 'NULL' : String(value)}</td>)}</tr>)}</tbody></table>
+                  {result.rows.length === 0 && <p className="muted empty-result">Строк не найдено.</p>}</div>
+              )}
+            </section>
+          </section>
 
-      <section className="result" aria-live="polite">
-        <h2>Результат</h2>
-        {result?.error && <p role="alert" className="error">{result.error}</p>}
-        {result && !result.error && result.columns.length === 0 && <p>Запрос не вернул таблицу.</p>}
-        {result && !result.error && result.columns.length > 0 && (
-          <div className="table-wrap"><table><thead><tr>{result.columns.map((column, index) => <th key={index}>{column}</th>)}</tr></thead>
-            <tbody>{result.rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value === null ? 'NULL' : String(value)}</td>)}</tr>)}</tbody></table></div>
-        )}
-      </section>
-    </main>
+          <aside className="panel tables-panel" aria-label="Доступные таблицы">
+            <h2>Доступные таблицы</h2>
+            <p className="muted">Основные для этого задания: {task.availableTables.join(', ')}.</p>
+            {Object.entries(tableColumns).map(([name, columns]) => (
+              <details key={name} open={task.availableTables.includes(name)}>
+                <summary>{name}</summary>
+                <ul>{columns.map((column) => <li key={column}><code>{column}</code></li>)}</ul>
+              </details>
+            ))}
+          </aside>
+        </main>
+      ) : (
+        <main className="catalog">
+          <div className="catalog-heading"><span className="eyebrow">ПРАКТИКА SQL</span><h1>Задания для ИТ-аудита</h1><p>Выберите задание. Начните с фильтрации строк и постепенно переходите к соединениям и группировке.</p></div>
+          <div className="task-grid">{tasks.map((item) => (
+            <button className="task-card" key={item.id} onClick={() => openTask(item.id)}>
+              <span className="task-number">{String(item.id).padStart(2, '0')}</span>
+              <strong>{item.title}</strong>
+              <small>{item.skill}</small>
+              <span className="card-arrow">Открыть →</span>
+            </button>
+          ))}</div>
+          <p className="muted">Следующие задания будут добавлены в последующих итерациях.</p>
+        </main>
+      )}
+    </div>
   )
 }
 
