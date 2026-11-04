@@ -18,9 +18,13 @@ INSERT INTO accounts VALUES
   (1, 1, 1, 'asmirnova', 1),
   (2, 2, 1, 'ipetrov', 1),
   (3, 3, 1, 'mkim', 0),
-  (4, 4, 2, 'osokolov', 1);
+  (4, 4, 2, 'osokolov', 1),
+  (5, NULL, 1, 'svc_erp', 1),
+  (6, 99, 2, 'unknown_owner', 0);
 INSERT INTO assets VALUES
   (1, 'LAP-001', 1, 1),
   (2, 'LAP-002', NULL, 1),
   (3, 'SRV-003', 4, 2),
-  (4, 'MON-004', NULL, 2);
+  (4, 'MON-004', NULL, 2),
+  (5, 'LAP-005', 2, 1),
+  (6, 'KEY-006', 3, 2);

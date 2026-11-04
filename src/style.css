@@ -9,6 +9,7 @@ button:disabled { cursor: default; opacity: .5; }
 .topbar-note { margin-left: auto; font-weight: 400; color: #666; }
 .workspace { display: grid; grid-template-columns: minmax(240px, 276px) minmax(480px, 1fr) minmax(270px, 360px); gap: 24px; padding: 24px; max-width: 1600px; margin: 0 auto; align-items: stretch; min-height: calc(100vh - 68px); }
 .panel { background: #fff; border: 1px solid #bdbdbd; border-radius: 5px; padding: 18px; min-width: 0; }
+.task-panel, .tables-panel { position: sticky; top: 92px; height: calc(100vh - 116px); min-height: 400px; overflow-y: auto; }
 .eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
 h1 { font-size: 21px; line-height: 1.25; margin: 18px 0 24px; }
 h2 { font-size: 17px; margin: 0 0 14px; }
@@ -39,11 +40,20 @@ th, td { border: 1px solid #c7c7c7; padding: 10px; }
 .error { padding: 14px; border: 1px solid #bdbdbd; background: #f0f0f0; white-space: pre-wrap; }
 .tables-panel h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
 .tables-panel > p { margin-bottom: 20px; }
+.tables-list { max-height: 230px; overflow-y: auto; padding-right: 4px; }
 details { border: 1px solid #c7c7c7; border-radius: 4px; margin-bottom: 6px; font-size: 13px; }
 summary { padding: 10px 12px; font-weight: 600; cursor: pointer; }
 details[open] summary { background: #ececec; }
 details ul { list-style: none; margin: 0; padding: 10px 12px; }
 details li { margin: 4px 0; overflow-wrap: anywhere; }
+.table-preview-button { margin: 0 12px 12px; padding: 7px 10px; border: 1px solid #bdbdbd; border-radius: 4px; background: #fff; font-size: 12px; }
+.preview { border-top: 1px solid #c7c7c7; margin-top: 20px; padding-top: 16px; }
+.preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.preview-heading h3 { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.preview-heading button { border: 0; background: none; font-size: 24px; line-height: 1; }
+.preview-table { max-height: 245px; overflow: auto; }
+.preview-table table { width: max-content; min-width: 100%; }
+.preview-table th, .preview-table td { padding: 7px; white-space: nowrap; font-size: 12px; }
 .catalog { max-width: 1160px; margin: 0 auto; padding: 52px 24px; }
 .catalog-heading h1 { font-size: 30px; margin: 10px 0; }
 .catalog-heading p { margin-bottom: 32px; }
@@ -52,5 +62,5 @@ details li { margin: 4px 0; overflow-wrap: anywhere; }
 .task-card:hover, .task-card:focus-visible { border-color: #444; }
 .task-number, .task-card small { color: #666; font-size: 12px; }
 .card-arrow { margin-top: auto; font-size: 12px; font-weight: 600; }
-@media (max-width: 1050px) { .workspace { grid-template-columns: minmax(220px, 280px) 1fr; } .tables-panel { grid-column: 2; } }
-@media (max-width: 700px) { .topbar { gap: 20px; } .topbar-note { display: none; } .workspace { display: flex; flex-direction: column; padding: 14px; gap: 14px; } .task-panel { min-height: 300px; } .catalog { padding: 30px 14px; } .task-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1050px) { .workspace { grid-template-columns: minmax(220px, 280px) 1fr; } .tables-panel { grid-column: 2; position: static; height: auto; max-height: 500px; } }
+@media (max-width: 700px) { .topbar { gap: 20px; } .topbar-note { display: none; } .workspace { display: flex; flex-direction: column; padding: 14px; gap: 14px; } .task-panel, .tables-panel { position: static; height: auto; max-height: none; } .task-panel { min-height: 300px; } .catalog { padding: 30px 14px; } .task-grid { grid-template-columns: 1fr; } }
