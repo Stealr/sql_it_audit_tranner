@@ -17,6 +17,15 @@ function savedQuery(id: number): string {
   return localStorage.getItem(`sql-trainer:query:${id}`) ?? tasks.find((task) => task.id === id)!.starterSql
 }
 
+function savedProgress(): number[] {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem('sql-trainer:completed') ?? '[]')
+    return Array.isArray(value) ? value.filter((id): id is number => Number.isInteger(id) && tasks.some((task) => task.id === id)) : []
+  } catch {
+    return []
+  }
+}
+
 function App() {
   const [taskId, setTaskId] = useState<number | null>(routeTaskId)
   const [query, setQuery] = useState(() => taskId === null ? '' : savedQuery(taskId))
@@ -24,6 +33,7 @@ function App() {
   const [running, setRunning] = useState(false)
   const [assessment, setAssessment] = useState<'correct' | 'incorrect' | null>(null)
   const [showHint, setShowHint] = useState(false)
+  const [completedTaskIds, setCompletedTaskIds] = useState<number[]>(savedProgress)
   const [previewTable, setPreviewTable] = useState<string | null>(null)
   const [preview, setPreview] = useState<QueryResult | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -92,7 +102,15 @@ function App() {
       if (event.data.id !== id || worker.current !== nextWorker) return
       if (timeout.current) clearTimeout(timeout.current)
       setResult(event.data)
-      if (check && !event.data.error) setAssessment(event.data.correct ? 'correct' : 'incorrect')
+      if (check && !event.data.error) {
+        setAssessment(event.data.correct ? 'correct' : 'incorrect')
+        if (event.data.correct) setCompletedTaskIds((current) => {
+          if (current.includes(task.id)) return current
+          const updated = [...current, task.id].sort((a, b) => a - b)
+          localStorage.setItem('sql-trainer:completed', JSON.stringify(updated))
+          return updated
+        })
+      }
       setRunning(false)
       nextWorker.terminate()
       worker.current = null
@@ -165,7 +183,7 @@ function App() {
       <header className="topbar">
         <button className="brand" onClick={() => openTask(null)}>SQL / АУДИТ</button>
         <span>{task ? `Задание ${task.id} / ${plannedTaskCount}` : 'Все задания'}</span>
-        <span className="topbar-note">Учебная база · SQLite</span>
+        <span className="topbar-note">Пройдено {completedTaskIds.length} / {plannedTaskCount} · SQLite</span>
       </header>
 
       {task ? (
@@ -213,6 +231,14 @@ function App() {
                   <tbody>{result.rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value === null ? 'NULL' : String(value)}</td>)}</tr>)}</tbody></table>
                   {result.rows.length === 0 && <p className="muted empty-result">Строк не найдено.</p>}</div>
               )}
+              {assessment === 'correct' && <div className="completion">
+                <h3>Задание выполнено</h3>
+                <p>Результат совпал с эталоном. Прогресс сохранён в этом браузере.</p>
+                <div className="actions">
+                  {task.id < tasks.length && <button onClick={() => openTask(task.id + 1)}>Следующее задание →</button>}
+                  <button className="secondary" onClick={() => openTask(null)}>К списку заданий</button>
+                </div>
+              </div>}
             </section>
           </section>
 
@@ -239,12 +265,13 @@ function App() {
         </main>
       ) : (
         <main className="catalog">
-          <div className="catalog-heading"><span className="eyebrow">ПРАКТИКА SQL</span><h1>Задания для ИТ-аудита</h1><p>Выберите задание. Начните с фильтрации строк и постепенно переходите к соединениям и группировке.</p></div>
+          <div className="catalog-heading"><span className="eyebrow">ПРАКТИКА SQL</span><h1>Задания для ИТ-аудита</h1><p>Выберите задание. Начните с фильтрации строк и постепенно переходите к соединениям и группировке.</p><p className="progress-summary">Пройдено {completedTaskIds.length} из {plannedTaskCount} заданий</p></div>
           <div className="task-grid">{tasks.map((item) => (
             <button className="task-card" key={item.id} onClick={() => openTask(item.id)}>
               <span className="task-number">{String(item.id).padStart(2, '0')}</span>
               <strong>{item.title}</strong>
               <small>{item.skill}</small>
+              {completedTaskIds.includes(item.id) && <span className="completed-mark">✓ Выполнено</span>}
               <span className="card-arrow">Открыть →</span>
             </button>
           ))}</div>

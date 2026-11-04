@@ -44,6 +44,9 @@ th, td { border: 1px solid #c7c7c7; padding: 10px; }
 .feedback { border: 1px solid #aaa; border-radius: 4px; padding: 12px; font-size: 13px; }
 .feedback.correct { background: #e8f2e9; border-color: #8aa98e; }
 .feedback.incorrect { background: #f7ece8; border-color: #ba9a8e; }
+.completion { margin-top: 20px; padding: 18px; background: #f3f7f3; border: 1px solid #8aa98e; border-radius: 5px; }
+.completion h3 { margin: 0 0 8px; font-size: 18px; }
+.completion p { margin: 0; font-size: 13px; }
 .tables-panel h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
 .tables-panel > p { margin-bottom: 20px; }
 .tables-list { max-height: 230px; overflow-y: auto; padding-right: 4px; }
@@ -63,10 +66,12 @@ details li { margin: 4px 0; overflow-wrap: anywhere; }
 .catalog { max-width: 1160px; margin: 0 auto; padding: 52px 24px; }
 .catalog-heading h1 { font-size: 30px; margin: 10px 0; }
 .catalog-heading p { margin-bottom: 32px; }
+.catalog-heading .progress-summary { font-weight: 600; margin-top: -16px; }
 .task-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .task-card { min-height: 160px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 9px; color: #242424; background: #fff; border: 1px solid #bdbdbd; border-radius: 5px; }
 .task-card:hover, .task-card:focus-visible { border-color: #444; }
 .task-number, .task-card small { color: #666; font-size: 12px; }
+.completed-mark { color: #396b40; font-size: 12px; font-weight: 700; }
 .card-arrow { margin-top: auto; font-size: 12px; font-weight: 600; }
 @media (max-width: 1050px) { .workspace { grid-template-columns: minmax(220px, 280px) 1fr; } .tables-panel { grid-column: 2; position: static; height: auto; max-height: 500px; } }
 @media (max-width: 700px) { .topbar { gap: 20px; } .topbar-note { display: none; } .workspace { display: flex; flex-direction: column; padding: 14px; gap: 14px; } .task-panel, .tables-panel { position: static; height: auto; max-height: none; } .task-panel { min-height: 300px; } .catalog { padding: 30px 14px; } .task-grid { grid-template-columns: 1fr; } }

@@ -29,6 +29,7 @@ test('данные дают ожидаемые результаты задани
   const db = database()
   assert.deepEqual(rows(db, 'SELECT id, login FROM accounts WHERE is_active = 1 ORDER BY id'), [
     [1, 'asmirnova'], [2, 'ipetrov'], [4, 'osokolov'], [5, 'svc_erp'],
+    [7, 'asmirnova_kadry'], [8, 'asmirnova_erp'], [9, 'ipetrov'],
   ])
   assert.deepEqual(rows(db, "SELECT id, full_name FROM employees WHERE status = 'terminated' ORDER BY full_name, id"), [
     [2, 'Иван Петров'], [3, 'Мария Ким'],
@@ -55,7 +56,7 @@ test('данные покрывают задания 4–6 и исключают
     JOIN accounts AS a ON a.employee_id = e.id
     WHERE e.status = 'terminated' AND a.is_active = 1
     ORDER BY e.full_name, a.login`), [
-    ['Иван Петров', 'ipetrov'],
+    ['Иван Петров', 'ipetrov'], ['Иван Петров', 'ipetrov'],
   ])
   assert.deepEqual(rows(db, `SELECT a.asset_tag, e.full_name FROM assets AS a
     JOIN employees AS e ON e.id = a.owner_employee_id
@@ -69,8 +70,8 @@ test('просмотр таблицы ограничивает выдачу и �
   const db = database()
   const preview = db.exec('SELECT * FROM "accounts" ORDER BY rowid LIMIT 8')[0]
   assert.deepEqual(preview.columns, ['id', 'employee_id', 'system_id', 'login', 'is_active'])
-  assert.equal(preview.values.length, 6)
-  assert.deepEqual(rows(db, 'SELECT COUNT(*) FROM accounts'), [[6]])
+  assert.equal(preview.values.length, 8)
+  assert.deepEqual(rows(db, 'SELECT COUNT(*) FROM accounts'), [[12]])
   db.close()
 })
 
@@ -86,7 +87,24 @@ test('данные для ролей и систем покрывают зада
   assert.deepEqual(rows(db, `SELECT s.name, COUNT(a.id) FROM systems s
     LEFT JOIN accounts a ON a.system_id = s.id AND a.is_active = 1
     GROUP BY s.id, s.name ORDER BY s.name`), [
-    ['ERP', 3], ['Архив', 0], ['Кадровая система', 1],
+    ['ERP', 5], ['Архив', 0], ['Кадровая система', 2],
+  ])
+  db.close()
+})
+
+test('дубли в пределах системы и агрегирование активных записей покрывают задания 9–10', () => {
+  const db = database()
+  assert.deepEqual(rows(db, `SELECT s.name, a.login, COUNT(*) FROM systems s
+    JOIN accounts a ON a.system_id = s.id
+    GROUP BY s.id, s.name, a.login HAVING COUNT(*) > 1
+    ORDER BY s.name, a.login`), [
+    ['ERP', 'ipetrov', 2], ['Кадровая система', 'osokolov', 2],
+  ])
+  assert.deepEqual(rows(db, `SELECT e.full_name, COUNT(a.id) FROM employees e
+    JOIN accounts a ON a.employee_id = e.id WHERE a.is_active = 1
+    GROUP BY e.id, e.full_name HAVING COUNT(a.id) >= 2
+    ORDER BY COUNT(a.id) DESC, e.full_name`), [
+    ['Анна Смирнова', 3], ['Иван Петров', 2],
   ])
   db.close()
 })
@@ -98,6 +116,6 @@ test('новая база восстанавливает исходные дан
   first.close()
 
   const second = database()
-  assert.deepEqual(rows(second, 'SELECT COUNT(*) FROM accounts'), [[6]])
+  assert.deepEqual(rows(second, 'SELECT COUNT(*) FROM accounts'), [[12]])
   second.close()
 })

@@ -117,6 +117,32 @@ export const tasks: Task[] = [
     orderMatters: true,
     referenceSql: 'SELECT s.name, COUNT(a.id) FROM systems s LEFT JOIN accounts a ON a.system_id = s.id AND a.is_active = 1 GROUP BY s.id, s.name ORDER BY s.name',
   },
+  {
+    id: 9,
+    title: 'Дубли логинов в одной системе',
+    skill: 'GROUP BY · HAVING',
+    description: 'Найдите пары «система – логин», встречающиеся более чем у одной учётной записи независимо от активности. Одинаковый логин в разных системах дублем не считается.',
+    availableTables: ['systems', 'accounts'],
+    starterSql: 'SELECT s.name, a.login, COUNT(*)\nFROM systems s\nJOIN accounts a ON a.system_id = s.id\nGROUP BY s.id, s.name, a.login;',
+    hint: 'Группируйте по системе и логину одновременно; отберите группы с количеством больше одного.',
+    expectedColumns: ['name', 'login', 'count'],
+    sortRule: 'По имени системы, затем по логину, по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT s.name, a.login, COUNT(*) FROM systems s JOIN accounts a ON a.system_id = s.id GROUP BY s.id, s.name, a.login HAVING COUNT(*) > 1 ORDER BY s.name, a.login',
+  },
+  {
+    id: 10,
+    title: 'Несколько активных записей у сотрудника',
+    skill: 'JOIN · GROUP BY · HAVING',
+    description: 'Найдите сотрудников с двумя или более активными учётными записями в любых системах.',
+    availableTables: ['employees', 'accounts'],
+    starterSql: 'SELECT e.full_name, COUNT(a.id)\nFROM employees e\nJOIN accounts a ON a.employee_id = e.id\nGROUP BY e.id, e.full_name;',
+    hint: 'Исключите отключённые записи до подсчёта.',
+    expectedColumns: ['full_name', 'count'],
+    sortRule: 'По числу записей по убыванию, затем по имени по возрастанию.',
+    orderMatters: true,
+    referenceSql: 'SELECT e.full_name, COUNT(a.id) FROM employees e JOIN accounts a ON a.employee_id = e.id WHERE a.is_active = 1 GROUP BY e.id, e.full_name HAVING COUNT(a.id) >= 2 ORDER BY COUNT(a.id) DESC, e.full_name',
+  },
 ]
 
 export const tableColumns: Record<string, string[]> = {
